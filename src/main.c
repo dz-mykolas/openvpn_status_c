@@ -1,24 +1,12 @@
-#include "main.h"
+#include "ubus_utils.h"
 
 int main()
 {
-    int socket_desc;
-    struct sockaddr_in server;
-    char server_reply[MAX_BUFFER_SIZE * MAX_CLIENTS];
-
-    if (socket_connect(&server, &socket_desc) == 1)
+    struct ubus_context *ctx;
+    if (start_ubus(&ctx) != EXIT_SUCCESS)
         return EXIT_FAILURE;
-    // Initial "connect" message
-    if (socket_receive_message(socket_desc, server_reply) != 0)
-        return EXIT_FAILURE;
-    printf("%s", server_reply);
-    socket_send_message(socket_desc, "status\n", server_reply);
-    //printf("%s", server_reply);
 
-    struct Client *list = NULL;
-    status_parse(&list, server_reply);
-    clients_print(list);
-    clients_remove(&list);
-    
+    ubus_free(ctx);
+
     return EXIT_SUCCESS;
 }
