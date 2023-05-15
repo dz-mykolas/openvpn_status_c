@@ -1,4 +1,4 @@
-#include "clients.h"
+#include "client.h"
 
 struct Client *client_create(char *common_name, char *real_address, u_int64_t bytes_received, u_int64_t bytes_sent, char *connected_since)
 {
