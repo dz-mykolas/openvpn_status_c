@@ -1,5 +1,20 @@
 #include "task_utils.h"
 
+void log_event(int type, const char *format, ...)
+{
+	setlogmask(LOG_UPTO(LOG_NOTICE));
+	openlog("openvpn_status", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL0);
+
+	char buffer[1024];
+	va_list args;
+	va_start(args, format);
+	vsnprintf(buffer, sizeof(buffer), format, args);
+	va_end(args);
+
+	syslog(type, "%s", buffer);
+	closelog();
+}
+
 // TODO:
 // errno does not work for some reason
 struct Client *client_parse(char *line)
@@ -62,4 +77,24 @@ int status_parse(struct Client **list, char *message)
         }
         line = strtok_r(NULL, "\n", &saveptr_data);
     }
+}
+
+int get_connected_clients(struct Client **list)
+{
+    int socket_desc;
+    struct sockaddr_in server;
+    char server_reply[MAX_BUFFER_SIZE * MAX_CLIENTS];
+
+    if (socket_connect(&server, &socket_desc) == 1)
+        return EXIT_FAILURE;
+    // Initial "connect" message
+    if (socket_receive_message(socket_desc, server_reply) != 0)
+        return EXIT_FAILURE;
+    socket_send_message(socket_desc, "status\n", server_reply);
+    close(socket_desc);
+    status_parse(list, server_reply);
+
+    if (*list == NULL)
+        return EXIT_FAILURE;
+    return EXIT_SUCCESS;
 }

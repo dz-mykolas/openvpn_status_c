@@ -2,7 +2,9 @@ BIN:=openvpn_status
 SRC:=$(wildcard *.c)
 OBJ:=$(SRC:.c=.o)
 CPPFLAGS:=
-LDFLAGS:=
+LDFLAGS:=	-lubus \
+			-lblobmsg_json \
+			-lubox
 
 .PHONY: all clean $(BIN)
 
