@@ -12,11 +12,7 @@
 #include "task_utils.h"
 
 enum {
-    CLIENT_COMMON_NAME,
     CLIENT_REAL_ADDRESS,
-    CLIENT_BYTES_RECEIVED,
-    CLIENT_BYTES_SENT,
-    CLIENT_CONNECTED_SINCE,
     __CLIENT_MAX,
 };
 
@@ -25,5 +21,8 @@ int start_ubus(struct ubus_context **ctx);
 static int current_clients_get(struct ubus_context *ctx, struct ubus_object *obj,
             struct ubus_request_data *req, const char *method,
             struct blob_attr *msg);
-            
+static int client_kill(struct ubus_context *ctx, struct ubus_object *obj,
+		      struct ubus_request_data *req, const char *method,
+		      struct blob_attr *msg);
+
 #endif
