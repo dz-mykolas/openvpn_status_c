@@ -22,8 +22,8 @@ int socket_connect(struct sockaddr_in *server, int *socket_desc)
 int socket_send_message(int socket_desc, char *message, char *server_reply)
 {
     if (send(socket_desc, message, strlen(message), 0) < 0) {
-        printf("Send failed");
-        return 1;
+        printf("Send failed\n");
+        return EXIT_FAILURE;
     }
     
     return socket_receive_message(socket_desc, server_reply);
@@ -32,10 +32,10 @@ int socket_send_message(int socket_desc, char *message, char *server_reply)
 int socket_receive_message(int socket_desc, char *server_reply)
 {
     int recv_size = 0;
-    if ((recv_size = recv(socket_desc, server_reply, MAX_BUFFER_SIZE, 0)) < 0) {
-        printf("recv failed");
-        return 1;
+    if ((recv_size = recv(socket_desc, server_reply, MAX_BUFFER_SIZE - 1, 0)) < 0) {
+        printf("recv failed\n");
+        return EXIT_FAILURE;
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }

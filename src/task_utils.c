@@ -54,24 +54,11 @@ int status_parse_loop_clients(struct Client **list, char *line, char *saveptr_da
 
 int status_parse(struct Client **list, char *message)
 {
-    // char data[] = "OpenVPN CLIENT LIST\n"
-    //             "Updated,2023-05-12 14:53:27\n"
-    //             "Common Name,Real Address,Bytes Received,Bytes Sent,Connected Since\n"
-    //             "r2,192.168.1.1:46017,3461,3113,2023-05-12 14:53:11\n"
-    //             "r1,192.168.1.1:37973,16420,39656,2023-05-12 13:58:42\n"
-    //             "ROUTING TABLE\n"
-    //             "Virtual Address,Common Name,Real Address,Last Ref\n"
-    //             "10.8.0.6,r1,192.168.1.1:37973,2023-05-12 13:58:42\n"
-    //             "10.8.0.10,r2,192.168.1.1:46017,2023-05-12 14:53:11\n"
-    //             "GLOBAL STATS\n"
-    //             "Max bcast/mcast queue length,1\n"
-    //             "END\n";
-
     char *saveptr_data;
     char *line = strtok_r(message, "\n", &saveptr_data);
     while (line != NULL) {
         if (strstr(line, "OpenVPN CLIENT LIST") == NULL) {
-            return 1;
+            return EXIT_FAILURE;
         } else {
             status_parse_loop_clients(list, line, saveptr_data);
         }
@@ -79,22 +66,45 @@ int status_parse(struct Client **list, char *message)
     }
 }
 
-int get_connected_clients(struct Client **list)
+int socket_message_helper(char *message, char server_reply[MAX_BUFFER_SIZE * MAX_CLIENTS])
 {
     int socket_desc;
     struct sockaddr_in server;
+    if (socket_connect(&server, &socket_desc) != EXIT_SUCCESS) {
+        return EXIT_FAILURE;
+    }
+    if (socket_receive_message(socket_desc, server_reply) != EXIT_SUCCESS) {
+        close(socket_desc);
+        return EXIT_FAILURE;
+    }
+    if (socket_send_message(socket_desc, message, server_reply) != EXIT_SUCCESS) {
+        close(socket_desc);
+        return EXIT_FAILURE;
+    }
+    close(socket_desc);
+
+    return EXIT_SUCCESS;
+}
+
+int kill_connected_client(char *command, char server_reply[MAX_BUFFER_SIZE * MAX_CLIENTS])
+{
+    int socket_desc;
+    struct sockaddr_in server;
+
+    if (socket_message_helper(command, server_reply) != EXIT_SUCCESS)
+        return EXIT_FAILURE;
+
+    return EXIT_SUCCESS;
+}
+
+int get_connected_clients(struct Client **list)
+{
     char server_reply[MAX_BUFFER_SIZE * MAX_CLIENTS];
 
-    if (socket_connect(&server, &socket_desc) == 1)
+    if (socket_message_helper("status\n", server_reply) != EXIT_SUCCESS)
         return EXIT_FAILURE;
-    // Initial "connect" message
-    if (socket_receive_message(socket_desc, server_reply) != 0)
-        return EXIT_FAILURE;
-    socket_send_message(socket_desc, "status\n", server_reply);
-    close(socket_desc);
+
     status_parse(list, server_reply);
 
-    if (*list == NULL)
-        return EXIT_FAILURE;
     return EXIT_SUCCESS;
 }
